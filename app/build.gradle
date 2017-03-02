@@ -1,0 +1,99 @@
+apply plugin: 'com.android.application'
+apply plugin: 'realm-android' //依赖Realm数据库，插件化依赖
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+
+    defaultConfig {
+        applicationId "com.youdu"
+        minSdkVersion 16
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0.0"
+        multiDexEnabled true  //突破应用方法数65535的一个限制
+        manifestPlaceholders = [UMENG_CHANNEL_VALUE: "imooc"]
+    }
+
+    signingConfigs {
+
+        debug {}
+        //签名打包
+        release {
+            storeFile file("youdo.jks")
+            storePassword "rzq123456"
+            keyAlias "qndroid"
+            keyPassword "rzq123456"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+
+            //指定我们release包的输出文件名就是我们的渠道名字
+            applicationVariants.all { variant ->
+                variant.outputs.each { output ->
+                    def outputFile = output.outputFile
+                    if (outputFile != null && outputFile.name.endsWith(".apk")) {
+
+                        def fileName = "${variant.productFlavors[0].name}" + ".apk"
+                        output.outputFile = new File(outputFile.parent, fileName);
+                    }
+                }
+            }
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+        lintConfig file("lint.xml")
+    }
+
+    //使AS知道.so文件的位置
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+    //真正的多渠道脚本支持
+    productFlavors {
+        googleplayer {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "googleplayer"]
+        }
+        productFlavors.all {
+            flavor -> flavor.manifestPlaceholders = [UMENG_CHANNEL_VALUE: name]
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:appcompat-v7:23.1.1'
+    compile project(':vuandroidadsdk') //依赖library原工程
+    //compile(name: 'vuandroidadsdk', ext: 'aar') //依赖library导出的aar包
+    //compile 'com.imooc:vuandroidadsdk:1.0.0.0-SNAPSHOT@aar' //通过maven仓库依赖aar，不需要再将aar传来传去
+
+    compile 'de.hdodenhof:circleimageview:2.1.0'
+    compile 'com.readystatesoftware.systembartint:systembartint:1.0.3'
+    //添加友盟统计
+    compile 'com.umeng.analytics:analytics:latest.integration'
+    compile 'com.nostra13.universalimageloader:universal-image-loader:1.9.5'
+    compile 'com.squareup.okhttp3:okhttp:3.3.0' //okttp依赖
+    //compile 'com.github.chrisbanes:PhotoView:1.3.0'
+    compile('cn.trinea.android.view.autoscrollviewpager:android-auto-scroll-view-pager:1.1.2') {
+        exclude module: 'support-v4'
+    }
+    compile 'com.r0adkll:slidableactivity:2.0.5' //滑动关闭Activity库
+    compile 'com.alipay.euler:andfix:0.5.0@aar'  //阿里热修复andfix
+    compile 'com.orhanobut:logger:+' //日志库logger
+}
+
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}
